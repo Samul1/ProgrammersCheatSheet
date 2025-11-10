@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8" />
+  <title>SQL Cheatsheet</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="background-gradient"></div>
+
+  <header class="site-header">
+    <div class="brand">
+      <span class="brand-dot"></span>
+      <span class="brand-text">Programmer's Cheatsheet</span>
+    </div>
+    <nav class="nav">
+      <a href="index.html">Etusivu</a>
+      <a href="python.html">Python</a>
+      <a href="cpp.html">C++</a>
+      <a href="sql.html" class="active">SQL</a>
+      <a href="sfml.html">SFML</a>
+      <a href="opengl.html">OpenGL</a>
+      <a href="miniaudio.html">MiniAudio</a>
+    </nav>
+  </header>
+
+  <main class="page page-with-sidebar">
+    <!-- LEFT SIDEBAR: tag filters -->
+    <aside class="tag-sidebar">
+      <h2 class="tag-sidebar-title">Filter by topic</h2>
+      <div class="tag-sidebar-list">
+        <!-- JS will inject filter pills here -->
+      </div>
+    </aside>
+
+    <!-- RIGHT COLUMN: intro + cards -->
+    <div class="cards-column">
+      <section class="intro">
+        <h1>SQL Cheatsheet (MySQL / MariaDB)</h1>
+        <p>Quick reference for MySQL / MariaDB administration and basic commands.</p>
+      </section>
+
+      <section class="cards-grid">
+
+      <!-- MySQL vs MariaDB -->
+      <article class="card">
+        <div class="card-header">
+          <span class="pill pill-purple">Overview</span>
+          <h2>🧬 MySQL vs MariaDB</h2>
+        </div>
+        <p>MySQL and MariaDB share the same roots, but are maintained by different vendors.</p>
+        <pre><code>- MySQL: originally by MySQL AB (Monty Widenius et al.), now owned by Oracle.
+- MariaDB: community-driven fork of MySQL, led by Monty Widenius.
+- MariaDB aims to stay highly compatible with MySQL (same SQL dialect &amp; tools).
+- Many systems still use &quot;mysql&quot; command name even when the server is MariaDB.</code></pre>
+      </article>
+
+      <!-- Connecting to the server -->
+      <article class="card">
+        <div class="card-header">
+          <span class="pill pill-green">Connection</span>
+          <h2>🔑 Connecting to MySQL / MariaDB</h2>
+        </div>
+        <p>Typical command line connection patterns (local and remote).</p>
+        <pre><code>-- Connect to a remote MariaDB/MySQL server
+mariadb -h 192.168.144.191 -u username -p database_name
+
+-- Connect locally as root (password prompt is hidden)
+mysql -u root -p
+
+-- JupyterLab / local socket example
+mysql -u root -p --socket=/tmp/mariadb_kernel/mysqld.sock</code></pre>
+      </article>
+
+      <!-- Basic admin commands -->
+      <article class="card">
+        <div class="card-header">
+          <span class="pill pill-blue">Admin</span>
+          <h2>📦 Basic admin commands</h2>
+        </div>
+        <p>Core commands every admin uses regularly.</p>
+        <pre><code>-- Show available databases on the server
+SHOW DATABASES;
+
+-- Create a new database
+CREATE DATABASE test_db;
+
+-- Drop (delete) a database
+DROP DATABASE test_db;
+
+-- Select which database to use
+USE test_db;
+
+-- Exit the MySQL/MariaDB monitor
+EXIT;   -- or QUIT;</code></pre>
+      </article>
+
+      <!-- Users and privileges -->
+      <article class="card">
+        <div class="card-header">
+          <span class="pill pill-red">Security</span>
+          <h2>🛂 Users &amp; privileges</h2>
+        </div>
+        <p>Create users and grant them access to databases.</p>
+        <pre><code>-- Create a new user (recommended syntax)
+CREATE USER 'eero'@'localhost' IDENTIFIED BY 'some_pass';
+
+-- Grant all privileges on specific database
+GRANT ALL PRIVILEGES ON sensors.* TO 'eero'@'localhost';
+
+-- Grant all privileges on all databases (be careful!)
+GRANT ALL PRIVILEGES ON *.* TO 'eero'@'%' WITH GRANT OPTION;
+
+-- Change password
+SET PASSWORD FOR 'eero'@'localhost' = PASSWORD('new_password');
+
+-- Remove user
+DROP USER 'eero'@'localhost';</code></pre>
+      </article>
+
+      <!-- System databases & metadata -->
+      <article class="card">
+        <div class="card-header">
+          <span class="pill pill-cyan">Meta</span>
+          <h2>🔍 System databases &amp; metadata</h2>
+        </div>
+        <p>Inspect system schemas and table structures.</p>
+        <pre><code>-- Switch to system metadata database
+USE information_schema;
+
+-- List all tables in the current database
+SHOW TABLES;
+
+-- Show the structure (columns) of a table
+DESCRIBE ENGINES;      -- or: DESC ENGINES;
+
+-- Inspect storage engines
+SELECT * FROM ENGINES;</code></pre>
+      </article>
+
+      <!-- Storage engines -->
+      <article class="card">
+        <div class="card-header">
+          <span class="pill pill-purple">Storage</span>
+          <h2>⚙️ Storage engines (table types)</h2>
+        </div>
+        <p>Main storage engines you will meet in MySQL / MariaDB.</p>
+        <pre><code>- MyISAM:
+  * Fast reads, simple design, no transactions.
+  * Table-level locking, good for read-heavy workloads.
+
+- InnoDB (default):
+  * Transactions, row-level locking, foreign keys.
+  * Good for large datasets and concurrent writes.
+
+- NDB (MySQL Cluster):
+  * Distributed across multiple servers, high availability.
+  * Data replicated between nodes; supports transactions.</code></pre>
+      </article>
+
+      <!-- Semicolons and multi-line input -->
+      <article class="card">
+        <div class="card-header">
+          <span class="pill pill-yellow">Syntax</span>
+          <h2>💡 Semicolons &amp; multi-line input</h2>
+        </div>
+        <p>Semicolon (;) ends a statement. Without it, the client waits for more input.</p>
+        <pre><code>mysql&gt; SELECT * FROM ENGINES      -- no semicolon yet
+    -&gt;                             -- MySQL waits for more
+    -&gt; ;                            -- end with semicolon
+
+-- To cancel the current unfinished statement:
+\c</code></pre>
+      </article>
+
+      <!-- Creating a database and table -->
+      <article class="card">
+        <div class="card-header">
+          <span class="pill pill-green">DDL</span>
+          <h2>🧱 Create database &amp; table</h2>
+        </div>
+        <p>Basic pattern for creating a database and a table with an auto-increment id.</p>
+        <pre><code>-- Create database
+CREATE DATABASE test_db;
+
+-- Use it
+USE test_db;
+
+-- Create table without id
+CREATE TABLE pet (
+    name    VARCHAR(20),
+    owner   VARCHAR(20),
+    species VARCHAR(20),
+    sex     CHAR(1),
+    birth   DATE,
+    death   DATE
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- Add auto-increment primary key column
+ALTER TABLE pet
+  ADD COLUMN id INT NOT NULL PRIMARY KEY AUTO_INCREMENT;
+
+-- Inspect the table structure
+DESCRIBE pet;</code></pre>
+      </article>
+
+      <!-- Basic SELECT (from your original card, in English) -->
+      <article class="card">
+        <div class="card-header">
+          <span class="pill pill-blue">SELECT</span>
+          <h2>📄 Basic SELECT</h2>
+        </div>
+        <p>Simple query from a single table, ordered by year.</p>
+        <pre><code>SELECT name, year
+FROM Movies
+WHERE year &gt;= 1950
+ORDER BY year DESC;</code></pre>
+      </article>
+
+            <article class="card">
+        <div class="card-header">
+          <span class="pill pill-purple">Theory</span>
+          <h2>🧱 Relational database basics</h2>
+        </div>
+        <p>Core ideas of a relational database.</p>
+        <pre><code>- Data is stored in tables (relations).
+- Each row = record (tuple), each column = field (attribute).
+- Each row has a PRIMARY KEY that uniquely identifies it.
+- Information is split into multiple tables so each fact is stored once.
+- Tables are linked with FOREIGN KEYs (relationships between entities).
+- Queries are based on names &amp; values, not physical storage order.</code></pre>
+      </article>
+
+            <article class="card">
+        <div class="card-header">
+          <span class="pill pill-yellow">Schema</span>
+          <h2>📋 Fields, datatypes &amp; NULL</h2>
+        </div>
+        <p>What each column needs in a well-designed table.</p>
+        <pre><code>- Field name (column name)
+- Datatype (INT, VARCHAR, DATE, DECIMAL, ... )
+- Maximum length / precision
+- Required? (NOT NULL) or allowed to be NULL
+- Default value (DEFAULT ...)
+- Optional input mask / validation rules (CHECK)
+
+NULL:
+- Special marker for "no value / unknown".
+- Not the same as 0 or empty string.
+- Use NOT NULL and DEFAULT to avoid excessive NULLs.</code></pre>
+      </article>
+
+            <article class="card">
+        <div class="card-header">
+          <span class="pill pill-green">Relations</span>
+          <h2>🔗 Primary &amp; foreign keys</h2>
+        </div>
+        <p>How tables are linked together.</p>
+        <pre><code>- PRIMARY KEY: unique identifier in one table.
+- FOREIGN KEY: column that references a primary key in another table.
+
+Cardinalities:
+- One-to-one (rare)
+- One-to-many (most common)
+- Many-to-many (usually split into a junction table)
+
+Referential integrity ensures:
+- No "orphan" references.
+- Updates/deletes in parent table are consistent in child tables.</code></pre>
+      </article>
+
+            <article class="card">
+        <div class="card-header">
+          <span class="pill pill-purple">Modeling</span>
+          <h2>🧠 ER diagrams</h2>
+        </div>
+        <p>Visual modeling of tables and relationships.</p>
+        <pre><code>- Entity = something we store data about (table).
+- Attribute = property of an entity (column).
+- Relationship = connection between entities (foreign keys).
+
+Tools:
+- MySQL Workbench: draw ER diagrams, generate CREATE TABLE.
+- Good modeling upfront makes queries and changes much easier.</code></pre>
+      </article>
+
+            <article class="card">
+        <div class="card-header">
+          <span class="pill pill-blue">INSERT</span>
+          <h2>➕ INSERT rows into a table</h2>
+        </div>
+        <p>Insert data into <code>pet</code> table (with auto-increment id).</p>
+        <pre><code>-- Syntax
+INSERT INTO table_name (col1, col2, ...)
+VALUES (val1, val2, ...);
+
+-- All values in correct order &amp; datatype
+INSERT INTO pet
+VALUES ('Claws','Gwen','cat','m','1994-03-17',NULL,NULL);
+
+INSERT INTO pet
+VALUES ('Puffball','Diane','hamster','f','1999-03-30',NULL,NULL);</code></pre>
+      </article>
+
+            <article class="card">
+        <div class="card-header">
+          <span class="pill pill-red">DML</span>
+          <h2>🧹 DELETE &amp; UPDATE</h2>
+        </div>
+        <p>Change or remove existing rows. Always use WHERE!</p>
+        <pre><code>-- Delete rows matching condition
+DELETE FROM pet
+WHERE name = 'Puffball';
+
+-- Update rows matching condition
+UPDATE pet
+SET birth = '1989-08-31'
+WHERE name = 'Bowser';</code></pre>
+      </article>
+
+            <article class="card">
+        <div class="card-header">
+          <span class="pill pill-green">SELECT</span>
+          <h2>📜 SELECT syntax overview</h2>
+        </div>
+        <p>The full structure of a SELECT query.</p>
+        <pre><code>SELECT [DISTINCT | ALL]
+       { * | column_list }
+FROM   table_list
+[WHERE condition]
+[GROUP BY column_list]
+[HAVING condition]
+[ORDER BY column_list];
+
+-- Example
+SELECT name, birth
+FROM pet
+WHERE species = 'dog'
+ORDER BY birth DESC;</code></pre>
+      </article>
+
+            <article class="card">
+        <div class="card-header">
+          <span class="pill pill-yellow">WHERE</span>
+          <h2>🎯 Filtering with WHERE</h2>
+        </div>
+        <p>Combining conditions with AND / OR.</p>
+        <pre><code>-- Single condition
+SELECT * FROM pet
+WHERE name = 'Bowser';
+
+-- Date filter
+SELECT * FROM pet
+WHERE birth &gt;= '1998-01-01';
+
+-- OR (snake OR bird)
+SELECT * FROM pet
+WHERE species = 'snake'
+   OR species = 'bird';
+
+-- Combined conditions
+SELECT * FROM pet
+WHERE (species = 'cat' AND sex = 'm')
+   OR (species = 'dog' AND sex = 'f');</code></pre>
+      </article>
+
+            <article class="card">
+        <div class="card-header">
+          <span class="pill pill-cyan">Duplicates</span>
+          <h2>♻️ Removing duplicates</h2>
+        </div>
+        <p>Projecting only some columns can create duplicate rows.</p>
+        <pre><code>-- DISTINCT removes duplicate rows
+SELECT DISTINCT owner
+FROM pet;
+
+-- UNION removes duplicates between result sets
+SELECT owner FROM pet
+UNION
+SELECT owner FROM other_table;
+
+-- UNION ALL keeps duplicates
+SELECT owner FROM pet
+UNION ALL
+SELECT owner FROM other_table;</code></pre>
+      </article>
+
+            <article class="card">
+        <div class="card-header">
+          <span class="pill pill-blue">ORDER BY</span>
+          <h2>📊 Sorting results</h2>
+        </div>
+        <p>Sort by one or more columns, ascending or descending.</p>
+        <pre><code>-- Oldest first (default ASC)
+SELECT name, birth
+FROM pet
+ORDER BY birth;
+
+-- Newest first (DESC)
+SELECT name, birth
+FROM pet
+ORDER BY birth DESC;
+
+-- Sort by multiple columns
+SELECT name, species, birth
+FROM pet
+ORDER BY species ASC, birth DESC;</code></pre>
+      </article>
+
+            <article class="card">
+        <div class="card-header">
+          <span class="pill pill-purple">Dates</span>
+          <h2>⏱ Date &amp; time functions</h2>
+        </div>
+        <p>Compute ages and work with months.</p>
+        <pre><code>-- Current date
+SELECT CURDATE();
+
+-- Age in years using TIMESTAMPDIFF
+SELECT name,
+       birth,
+       CURDATE() AS today,
+       TIMESTAMPDIFF(YEAR, birth, CURDATE()) AS age
+FROM pet
+ORDER BY age;
+
+-- Extract month number
+SELECT name, birth, MONTH(birth) AS birth_month
+FROM pet;</code></pre>
+      </article>
+
+            <article class="card">
+        <div class="card-header">
+          <span class="pill pill-green">Variables</span>
+          <h2>📆 Next month birthdays</h2>
+        </div>
+        <p>Use a user-defined variable to store the current month.</p>
+        <pre><code>-- Store current month as @month
+SET @month = MONTH(CURDATE());
+
+-- Who has birthday next month?
+SELECT name, birth
+FROM pet
+WHERE MONTH(birth) = @month + 1;</code></pre>
+      </article>
+
+            <article class="card">
+        <div class="card-header">
+          <span class="pill pill-red">NULL</span>
+          <h2>🚫 Working with NULL</h2>
+        </div>
+        <p>NULL represents “no value”, not 0 or empty string.</p>
+        <pre><code>-- Find pets that have a death date (not alive)
+SELECT name, birth, death,
+       TIMESTAMPDIFF(YEAR, birth, death) AS age
+FROM pet
+WHERE death IS NOT NULL
+ORDER BY age;
+
+-- Check for missing values
+WHERE some_column IS NULL
+WHERE some_column IS NOT NULL;</code></pre>
+      </article>
+
+            <article class="card">
+        <div class="card-header">
+          <span class="pill pill-cyan">Aggregates</span>
+          <h2>🧮 Aggregate functions</h2>
+        </div>
+        <p>Summaries over many rows: COUNT, AVG, MIN, MAX, SUM.</p>
+        <pre><code>-- Total number of employees
+SELECT COUNT(*) FROM employees;
+
+-- Count non-NULL last names
+SELECT COUNT(last_name) FROM employees;
+
+-- Count distinct last names
+SELECT COUNT(DISTINCT last_name)
+FROM employees;
+
+-- Average salary
+SELECT AVG(salary)
+FROM employees;</code></pre>
+      </article>
+
+            <article class="card">
+        <div class="card-header">
+          <span class="pill pill-green">GROUP BY</span>
+          <h2>📦 GROUP BY &amp; HAVING</h2>
+        </div>
+        <p>Group rows and filter groups using HAVING.</p>
+        <pre><code>-- Basic pattern
+SELECT col, AGG_FUNC(...)
+FROM table
+GROUP BY col
+HAVING &lt;condition on aggregate&gt;;
+
+-- Example: total price per seller, only &gt; 5000
+SELECT seller, SUM(price) AS total_price
+FROM product
+GROUP BY seller
+HAVING SUM(price) &gt; 5000;</code></pre>
+      </article>
+
+            <article class="card">
+        <div class="card-header">
+          <span class="pill pill-yellow">GROUP BY</span>
+          <h2>📈 Max, min &amp; salary range</h2>
+        </div>
+        <p>Use MIN/MAX and arithmetic inside GROUP BY queries.</p>
+        <pre><code>-- Max and min salary per job
+SELECT JOB_TITLE,
+       MAX_SALARY,
+       MIN_SALARY,
+       (MAX_SALARY - MIN_SALARY) AS salary_range,
+       COUNT(*) AS count_jobs
+FROM jobs
+GROUP BY MAX_SALARY DESC;</code></pre>
+      </article>
+
+            <article class="card">
+        <div class="card-header">
+          <span class="pill pill-red">HAVING</span>
+          <h2>👥 Managers with subordinates</h2>
+        </div>
+        <p>Filter groups based on aggregate values.</p>
+        <pre><code>-- Managers that have more than 1 subordinate
+SELECT MANAGER_ID,
+       COUNT(*) AS cnt
+FROM employees
+GROUP BY MANAGER_ID
+HAVING cnt &gt; 1;</code></pre>
+      </article>
+
+            <article class="card">
+        <div class="card-header">
+          <span class="pill pill-blue">Constraints</span>
+          <h2>🛡 PRIMARY KEY &amp; DEFAULT</h2>
+        </div>
+        <p>Using CONSTRAINT, PRIMARY KEY and DEFAULT in CREATE TABLE.</p>
+        <pre><code>CREATE TABLE Employee (
+    EmployeeID   INT          NOT NULL,
+    FirstName    VARCHAR(32)  NOT NULL,
+    LastName     VARCHAR(64)  NOT NULL,
+    SocialID     CHAR(11)     NOT NULL,
+    Salary       DOUBLE       NOT NULL DEFAULT 1500,
+    BirthDate    DATE         NOT NULL,
+    DeptID       INT          NOT NULL DEFAULT 1,
+    CONSTRAINT PK_Employee
+        PRIMARY KEY (EmployeeID)
+);</code></pre>
+      </article>
+
+            <article class="card">
+        <div class="card-header">
+          <span class="pill pill-purple">Integrity</span>
+          <h2>🔐 UNIQUE &amp; FOREIGN KEY</h2>
+        </div>
+        <p>Ensure no duplicates and valid references.</p>
+        <pre><code>CREATE TABLE Department (
+    DeptID     INT         NOT NULL,
+    DeptName   VARCHAR(64) NOT NULL,
+    CONSTRAINT PK_Department
+        PRIMARY KEY (DeptID)
+);
+
+CREATE TABLE Employee (
+    EmployeeID   INT         NOT NULL,
+    FirstName    VARCHAR(32) NOT NULL,
+    LastName     VARCHAR(64) NOT NULL,
+    SocialID     CHAR(11)    NOT NULL,
+    Salary       DOUBLE      NOT NULL DEFAULT 1500,
+    BirthDate    DATE        NOT NULL,
+    DeptID       INT         NOT NULL,
+    CONSTRAINT PK_Employee
+        PRIMARY KEY (EmployeeID),
+    CONSTRAINT UQ_Employee_SocialID
+        UNIQUE (SocialID),
+    CONSTRAINT FK_Employee_Department
+        FOREIGN KEY (DeptID)
+        REFERENCES Department(DeptID)
+);</code></pre>
+      </article>
+
+            <article class="card">
+        <div class="card-header">
+          <span class="pill pill-green">FK actions</span>
+          <h2>⚖️ ON UPDATE / ON DELETE</h2>
+        </div>
+        <p>What happens when parent rows are updated or deleted.</p>
+        <pre><code>FOREIGN KEY (DeptID)
+  REFERENCES Department (DeptID)
+    ON UPDATE CASCADE
+    ON DELETE NO ACTION;
+
+-- Common options:
+-- NO ACTION / RESTRICT: block change if it breaks FK.
+-- SET NULL: set FK column to NULL.
+-- SET DEFAULT: set FK column to its DEFAULT value.
+-- CASCADE: propagate UPDATE/DELETE to child rows.</code></pre>
+      </article>
+
+      <article class="card">
+        <div class="card-header">
+          <span class="pill pill-red">CHECK</span>
+          <h2>✅ CHECK constraints</h2>
+        </div>
+        <p>Validate values at the database level.</p>
+        <pre><code>CREATE TABLE Employee (
+    EmployeeID  INT         NOT NULL,
+    Salary      DOUBLE      NOT NULL DEFAULT 1500,
+    BirthDate   DATE        NOT NULL,
+    CONSTRAINT PK_Employee
+        PRIMARY KEY (EmployeeID),
+    CONSTRAINT CK_Employee_Salary
+        CHECK (Salary &gt; 0 AND Salary &lt; 10000)
+);</code></pre>
+      </article>
+
+            <article class="card">
+        <div class="card-header">
+          <span class="pill pill-red">CHECK</span>
+          <h2>✅ CHECK constraints</h2>
+        </div>
+        <p>Validate values at the database level.</p>
+        <pre><code>CREATE TABLE Employee (
+    EmployeeID  INT         NOT NULL,
+    Salary      DOUBLE      NOT NULL DEFAULT 1500,
+    BirthDate   DATE        NOT NULL,
+    CONSTRAINT PK_Employee
+        PRIMARY KEY (EmployeeID),
+    CONSTRAINT CK_Employee_Salary
+        CHECK (Salary &gt; 0 AND Salary &lt; 10000)
+);</code></pre>
+      </article>
+
+      <article class="card">
+  <div class="card-header">
+    <span class="pill pill-purple">JOIN</span>
+    <h2>🔗 Table joins — combining related data</h2>
+  </div>
+  <p>Join = combine rows from multiple tables based on matching columns.</p>
+  <pre><code>-- Classic join (old style)
+SELECT o.lastname, p.phone, o.ssn
+FROM Student o, Phone p
+WHERE o.ssn = p.ssn;
+
+-- SQL-92 standard
+SELECT o.lastname, p.phone, o.ssn
+FROM Student AS o
+INNER JOIN Phone AS p
+ON o.ssn = p.ssn;
+
+-- USING if the key has the same name
+SELECT lastname, phone, ssn
+FROM Student INNER JOIN Phone
+USING (ssn);
+
+-- NATURAL JOIN joins on all columns with same name
+SELECT lastname, phone, ssn
+FROM Student NATURAL JOIN Phone;</code></pre>
+</article>
+
+    <article class="card">
+  <div class="card-header">
+    <span class="pill pill-blue">UNION</span>
+    <h2>🧩 UNION — stack results</h2>
+  </div>
+  <p>UNION merges query results with identical column structure.</p>
+  <pre><code>-- Both SELECTs must return same number of columns and types
+SELECT lastname, firstname, grade
+FROM Student AS s, Exam AS e
+WHERE grade = 3 AND s.ssn = e.student
+UNION
+SELECT lastname, firstname, 0
+FROM Student
+WHERE lastname = 'Scientist'
+ORDER BY lastname, firstname;
+
+-- UNION removes duplicates (like DISTINCT)
+-- UNION ALL keeps duplicates</code></pre>
+</article>
+
+<article class="card">
+  <div class="card-header">
+    <span class="pill pill-green">OUTER JOIN</span>
+    <h2>🌍 Outer joins — keep unmatched rows</h2>
+  </div>
+  <p>Outer joins return rows even when no match exists in the other table.</p>
+  <pre><code>-- LEFT OUTER JOIN: all from left + matches from right
+SELECT firstname, lastname, phone
+FROM Student NATURAL LEFT OUTER JOIN Phone;
+
+-- RIGHT OUTER JOIN: all from right + matches from left
+SELECT firstname, lastname, phone
+FROM Phone NATURAL RIGHT OUTER JOIN Student;
+
+-- FULL OUTER JOIN: all rows from both sides
+SELECT lastname, coursecode
+FROM Student LEFT JOIN Exam
+  ON Student.ssn = Exam.student
+LEFT JOIN Course
+  ON Exam.course = Course.coursecode
+UNION
+SELECT lastname, coursecode
+FROM Student RIGHT JOIN Exam
+  ON Student.ssn = Exam.student
+RIGHT JOIN Course
+  ON Exam.course = Course.coursecode;</code></pre>
+</article>
+
+<article class="card">
+  <div class="card-header">
+    <span class="pill pill-yellow">JOIN</span>
+    <h2>🧠 Combining many joins</h2>
+  </div>
+  <p>Join several tables together to build complex views.</p>
+  <pre><code>SELECT firstname, lastname, phone,
+       Course.name AS course_name, grade
+FROM Student
+NATURAL LEFT JOIN Phone
+LEFT JOIN Exam
+  ON Student.ssn = Exam.student
+RIGHT JOIN Course
+  ON Exam.course = Course.coursecode;</code></pre>
+</article>
+
+<article class="card">
+  <div class="card-header">
+    <span class="pill pill-red">Set ops</span>
+    <h2>⚖️ EXCEPT &amp; INTERSECT</h2>
+  </div>
+  <p>Compare result sets using set operations.</p>
+  <pre><code>-- EXCEPT: rows in first query but not in second
+SELECT ssn
+FROM Student
+EXCEPT
+SELECT student
+FROM Exam;
+
+-- INTERSECT: common rows between queries
+SELECT ssn
+FROM Student
+INTERSECT
+SELECT student
+FROM Exam;
+
+-- Same as INTERSECT using JOIN
+SELECT DISTINCT s.ssn
+FROM Student s, Exam e
+WHERE s.ssn = e.student;</code></pre>
+</article>
+
+<article class="card">
+  <div class="card-header">
+    <span class="pill pill-cyan">Subquery</span>
+    <h2>🧩 Subqueries</h2>
+  </div>
+  <p>Subqueries refine selection or comparison logic inside another query.</p>
+  <pre><code>-- Students who never took any exam
+SELECT firstname, lastname
+FROM Student
+WHERE ssn NOT IN (
+  SELECT student
+  FROM Exam
+);
+
+-- Students who have taken an exam
+SELECT firstname, lastname
+FROM Student
+WHERE ssn IN (
+  SELECT student
+  FROM Exam
+);
+
+-- Highest exam grade
+SELECT *
+FROM Exam
+WHERE grade = (
+  SELECT MAX(grade)
+  FROM Exam
+);</code></pre>
+</article>
+
+<article class="card">
+  <div class="card-header">
+    <span class="pill pill-purple">Subquery</span>
+    <h2>🔍 IN, ANY, ALL, EXISTS</h2>
+  </div>
+  <p>Choose operator based on how many rows the subquery returns.</p>
+  <pre><code>-- IN: true if value equals ANY row in subquery
+WHERE ssn IN (SELECT student FROM Exam);
+
+-- ANY / SOME: true if condition holds for any value
+WHERE grade &gt; ANY (
+  SELECT grade FROM Exam WHERE course = 'DB101'
+);
+
+-- ALL: true only if condition holds for all values
+WHERE grade &gt; ALL (
+  SELECT grade FROM Exam WHERE student = '111112-111P'
+);
+
+-- EXISTS: true if subquery returns any rows
+WHERE EXISTS (
+  SELECT * FROM Exam e
+  WHERE e.student = Student.ssn
+);</code></pre>
+</article>
+
+<article class="card">
+  <div class="card-header">
+    <span class="pill pill-green">Correlated</span>
+    <h2>♻️ Correlated subqueries</h2>
+  </div>
+  <p>Subquery depends on outer query; executed per outer row.</p>
+  <pre><code>-- Top 3 exam grades
+SELECT *
+FROM Exam t
+WHERE 3 &gt; (
+  SELECT COUNT(grade)
+  FROM Exam tt
+  WHERE tt.grade &gt; t.grade
+);
+
+-- 3 lowest grades
+SELECT *
+FROM Exam t
+WHERE 3 &gt; (
+  SELECT COUNT(grade)
+  FROM Exam tt
+  WHERE tt.grade &lt; t.grade
+);</code></pre>
+</article>
+
+<article class="card">
+  <div class="card-header">
+    <span class="pill pill-yellow">Subquery</span>
+    <h2>🌐 Courses taken by everyone</h2>
+  </div>
+  <p>Two equivalent ways to express “for all” using subqueries.</p>
+  <pre><code>-- Count-based version
+SELECT coursecode
+FROM Course c
+WHERE (SELECT COUNT(*) FROM Student)
+      = (SELECT COUNT(DISTINCT student)
+         FROM Exam
+         WHERE course = c.coursecode);
+
+-- Double NOT EXISTS version
+SELECT coursecode
+FROM Course c
+WHERE NOT EXISTS (
+  SELECT * FROM Student s
+  WHERE NOT EXISTS (
+    SELECT * FROM Exam e
+    WHERE e.student = s.ssn
+      AND e.course = c.coursecode
+  )
+);</code></pre>
+</article>
+
+<article class="card">
+  <div class="card-header">
+    <span class="pill pill-blue">Aggregate</span>
+    <h2>🏆 Aggregate with subquery filter</h2>
+  </div>
+  <p>Count total credits (ECTS) for students with over 10 passed credits.</p>
+  <pre><code>SELECT firstname, lastname, SUM(credits)
+FROM Student s, Exam e, Course c
+WHERE s.ssn = e.student
+  AND e.course = c.coursecode
+  AND e.grade &gt; 2
+  AND 10 &lt; (
+    SELECT SUM(credits)
+    FROM Course c2, Exam e2
+    WHERE e2.course = c2.coursecode
+      AND e2.student = s.ssn
+      AND e2.grade &gt;= 1
+  )
+GROUP BY firstname, lastname;</code></pre>
+</article>
+
+<article class="card">
+  <div class="card-header">
+    <span class="pill pill-red">UPDATE</span>
+    <h2>✏️ Update using subquery condition</h2>
+  </div>
+  <p>Use subquery to restrict which rows get updated.</p>
+  <pre><code>UPDATE Exam
+SET grade = grade - 0.25
+WHERE course = 'TIE160'
+  AND student IN (
+    SELECT ssn
+    FROM Student
+    WHERE startyear &gt; 1998
+);</code></pre>
+</article>
+
+
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <span>Built for quick SQL recall 🧮</span>
+  </footer>
+
+  <script src="src/app.js"></script>
+
+</body>
+</html>

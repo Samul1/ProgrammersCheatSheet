@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8" />
+  <title>MiniAudio Cheatsheet</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="background-gradient"></div>
+
+  <header class="site-header">
+    <div class="brand">
+      <span class="brand-dot"></span>
+      <span class="brand-text">Programmer's Cheatsheet</span>
+    </div>
+    <nav class="nav">
+      <a href="index.html">Etusivu</a>
+      <a href="python.html">Python</a>
+      <a href="cpp.html">C++</a>
+      <a href="sql.html">SQL</a>
+      <a href="sfml.html">SFML</a>
+      <a href="opengl.html">OpenGL</a>
+      <a href="miniaudio.html" class="active">MiniAudio</a>
+    </nav>
+  </header>
+
+  <main class="page page-with-sidebar">
+    <!-- LEFT SIDEBAR: tag filters -->
+    <aside class="tag-sidebar">
+      <h2 class="tag-sidebar-title">Filter by topic</h2>
+      <div class="tag-sidebar-list">
+        <!-- src/app.js will inject filter pills here based on card tags -->
+      </div>
+    </aside>
+
+    <!-- RIGHT COLUMN: intro + cards -->
+    <div class="cards-column">
+      <section class="intro">
+        <h1>MiniAudio Cheatsheet</h1>
+        <p>Quick reference for audio playback, mixing and SFX triggering in C++ with MiniAudio.</p>
+      </section>
+
+      <section class="cards-grid">
+
+        <!-- 1. Simple playback with ma_engine -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-red">Engine</span>
+            <h2>🎧 Play a single audio track</h2>
+          </div>
+          <p>Use the high-level <code>ma_engine</code> API to play a single sound file.</p>
+          <pre><code>#include &lt;iostream&gt;
+#define MINIAUDIO_IMPLEMENTATION
+#include &lt;engine/miniaudio.h&gt;
+
+int main() {
+    ma_result result;
+    ma_engine engine;
+
+    // Initialize engine (NULL = default settings).
+    result = ma_engine_init(NULL, &amp;engine);
+    if (result != MA_SUCCESS) {
+        std::cerr &lt;&lt; "Failed to init engine, code: "
+                  &lt;&lt; result &lt;&lt; std::endl;
+        return -1;
+    }
+
+    // Play one sound file.
+    result = ma_engine_play_sound(
+        &amp;engine,
+        "assets/soundtracks/ArcadeLegendat.wav",
+        NULL
+    );
+
+    if (result != MA_SUCCESS) {
+        std::cerr &lt;&lt; "Failed to play sound, code: "
+                  &lt;&lt; result &lt;&lt; std::endl;
+        ma_engine_uninit(&amp;engine);
+        return -1;
+    }
+
+    std::cout &lt;&lt; "Playing... press Enter to quit.\n";
+    std::cin.get();
+
+    ma_engine_uninit(&amp;engine);
+    return 0;
+}</code></pre>
+        </article>
+
+        <!-- 2. Global mixing & SFX state -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-purple">State</span>
+            <h2>📦 Global mixing state &amp; atomics</h2>
+          </div>
+          <p>Global variables for BGM decoders, SFX samples and atomic playback flags.</p>
+          <pre><code>#include &lt;vector&gt;
+#include &lt;thread&gt;
+#include &lt;chrono&gt;
+#include &lt;atomic&gt;
+
+std::vector&lt;float&gt; g_sfxBuffer;   // SFX samples (mono)
+size_t              g_sfxFrameCount = 0;
+
+std::atomic&lt;bool&gt;   g_sfxPlaying(false);  // is SFX currently playing?
+std::atomic&lt;size_t&gt; g_sfxPos(0);          // current SFX sample index
+std::atomic&lt;bool&gt;   playbackRunning(true); // main loop flag
+
+// Common format for all decoders and the device.
+#define SAMPLE_FORMAT   ma_format_f32
+#define CHANNEL_COUNT   2
+#define SAMPLE_RATE     48000
+
+ma_uint32   g_decoderCount;   // number of BGM decoders
+ma_decoder* g_pDecoders;      // array of decoders
+ma_bool32*  g_pDecodersAtEnd; // per-decoder EOF flags
+
+ma_event g_stopEvent;         // signaled when all decoders reached EOF</code></pre>
+        </article>
+
+        <!-- 3. read_and_mix_pcm_frames_f32 -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-green">Mixing</span>
+            <h2>🎚 Mixing BGM decoders into output</h2>
+          </div>
+          <p>Read frames from a decoder into a temp buffer and sum them into <code>pOutputF32</code>.</p>
+          <pre><code>ma_uint32 read_and_mix_pcm_frames_f32(
+    ma_decoder* pDecoder,
+    float*      pOutputF32,
+    ma_uint32   frameCount
+) {
+    float     temp[4096];
+    ma_uint32 tempCapInFrames = ma_countof(temp) / CHANNEL_COUNT;
+    ma_uint32 totalFramesRead = 0;
+
+    while (totalFramesRead &lt; frameCount) {
+        ma_uint64 framesReadThisIteration;
+        ma_uint32 remaining = frameCount - totalFramesRead;
+        ma_uint32 toRead    = tempCapInFrames;
+
+        if (toRead &gt; remaining) {
+            toRead = remaining;
+        }
+
+        ma_result result = ma_decoder_read_pcm_frames(
+            pDecoder,
+            temp,
+            toRead,
+            &amp;framesReadThisIteration
+        );
+
+        if (result != MA_SUCCESS || framesReadThisIteration == 0) {
+            break; // error or EOF
+        }
+
+        // Simple mixing: sum samples into the output buffer.
+        for (ma_uint64 i = 0;
+             i &lt; framesReadThisIteration * CHANNEL_COUNT;
+             ++i) {
+            pOutputF32[totalFramesRead * CHANNEL_COUNT + i]
+                += temp[i];
+        }
+
+        totalFramesRead += (ma_uint32)framesReadThisIteration;
+
+        if (framesReadThisIteration &lt; (ma_uint32)toRead) {
+            break; // EOF
+        }
+    }
+
+    return totalFramesRead;
+}</code></pre>
+        </article>
+
+        <!-- 4. Data callback: BGM + SFX + stop-event -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-blue">Callback</span>
+            <h2>🔁 data_callback: mix BGM and SFX</h2>
+          </div>
+          <p>The audio device calls this whenever it needs more samples.</p>
+          <pre><code>ma_bool32 are_all_decoders_at_end(void) {
+    for (ma_uint32 i = 0; i &lt; g_decoderCount; ++i) {
+        if (g_pDecodersAtEnd[i] == MA_FALSE)
+            return MA_FALSE;
+    }
+    return MA_TRUE;
+}
+
+void data_callback(
+    ma_device*  pDevice,
+    void*       pOutput,
+    const void* pInput,
+    ma_uint32   frameCount
+) {
+    float* pOutputF32 = (float*)pOutput;
+
+    // 1) BGM: mix all active decoders into pOutputF32.
+    for (ma_uint32 i = 0; i &lt; g_decoderCount; ++i) {
+        if (!g_pDecodersAtEnd[i]) {
+            ma_uint32 framesRead =
+                read_and_mix_pcm_frames_f32(
+                    &amp;g_pDecoders[i],
+                    pOutputF32,
+                    frameCount
+                );
+            if (framesRead &lt; frameCount) {
+                g_pDecodersAtEnd[i] = MA_TRUE;
+            }
+        }
+    }
+
+    // 2) SFX: add mono SFX samples to both channels.
+    if (g_sfxPlaying.load()) {
+        for (ma_uint32 frame = 0; frame &lt; frameCount; ++frame) {
+            size_t pos = g_sfxPos.load();
+            if (pos &lt; g_sfxFrameCount) {
+                float s = g_sfxBuffer[pos];
+                pOutputF32[frame * CHANNEL_COUNT + 0] += s;
+                pOutputF32[frame * CHANNEL_COUNT + 1] += s;
+                g_sfxPos++;
+            } else {
+                g_sfxPlaying.store(false);
+                break;
+            }
+        }
+    }
+
+    // 3) If all decoders reached EOF, signal the stop event.
+    if (are_all_decoders_at_end()) {
+        ma_event_signal(&amp;g_stopEvent);
+    }
+
+    (void)pInput;
+    (void)pDevice;
+}</code></pre>
+        </article>
+
+        <!-- 5. Loading SFX to buffer -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-cyan">SFX</span>
+            <h2>📂 Load SFX file into a float buffer</h2>
+          </div>
+          <p>Load a short SFX file fully into memory so it can be triggered quickly.</p>
+          <pre><code>void load_sfx() {
+    ma_decoder        sfxDecoder;
+    ma_decoder_config sfxCfg =
+        ma_decoder_config_init(SAMPLE_FORMAT, 1, SAMPLE_RATE);
+
+    ma_result sfxResult = ma_decoder_init_file(
+        "assets/sfx/Select1.wav",
+        &amp;sfxCfg,
+        &amp;sfxDecoder
+    );
+    if (sfxResult != MA_SUCCESS) {
+        printf("Failed to load SFX file.\n");
+        return;
+    }
+
+    const size_t          chunkSize = 4096;
+    std::vector&lt;float&gt;    temp(chunkSize);
+    ma_uint64             framesThisChunk = 0;
+
+    g_sfxBuffer.clear();
+    g_sfxFrameCount = 0;
+
+    while (true) {
+        sfxResult = ma_decoder_read_pcm_frames(
+            &amp;sfxDecoder,
+            temp.data(),
+            chunkSize,
+            &amp;framesThisChunk
+        );
+        if (sfxResult != MA_SUCCESS || framesThisChunk == 0) {
+            break;
+        }
+
+        g_sfxBuffer.insert(
+            g_sfxBuffer.end(),
+            temp.begin(),
+            temp.begin() + framesThisChunk
+        );
+        g_sfxFrameCount += framesThisChunk;
+    }
+
+    ma_decoder_uninit(&amp;sfxDecoder);
+    printf("Loaded SFX: %zu frames.\n", g_sfxFrameCount);
+}</code></pre>
+        </article>
+
+        <!-- 6. SFX trigger thread -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-green">Thread</span>
+            <h2>⏱ Trigger SFX from a separate thread</h2>
+          </div>
+          <p>Every second, start the SFX from the beginning if it is not already playing.</p>
+          <pre><code>void sfx_trigger_thread() {
+    using namespace std::chrono_literals;
+
+    while (playbackRunning.load()) {
+        std::this_thread::sleep_for(1s);
+
+        // Start SFX only if it is not already active.
+        if (!g_sfxPlaying.load()) {
+            g_sfxPos.store(0);
+            g_sfxPlaying.store(true);
+        }
+    }
+}</code></pre>
+        </article>
+
+        <!-- 7. Decoder init & device configuration -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-purple">Device</span>
+            <h2>🧩 Decoders &amp; playback device configuration</h2>
+          </div>
+          <p>Initialize BGM decoders and the playback device with matching format.</p>
+          <pre><code>int main(int argc, char** argv) {
+    ma_result        result;
+    ma_decoder_config decoderConfig;
+    ma_device_config  deviceConfig;
+    ma_device         device;
+
+    const char* testFiles[] = {
+        "assets/bgm/LetYourHeartBeat.wav",
+        "assets/sfx/Select1.wav"
+    };
+
+    // Choose files from command line or use the hardcoded ones.
+    if (argc &lt; 2) {
+        g_decoderCount = 2;
+    } else {
+        g_decoderCount = argc - 1;
+    }
+
+    g_pDecoders      = (ma_decoder*)
+        malloc(sizeof(*g_pDecoders) * g_decoderCount);
+    g_pDecodersAtEnd = (ma_bool32*)
+        malloc(sizeof(*g_pDecodersAtEnd) * g_decoderCount);
+
+    // All decoders use the same output format.
+    decoderConfig = ma_decoder_config_init(
+        SAMPLE_FORMAT, CHANNEL_COUNT, SAMPLE_RATE
+    );
+
+    for (ma_uint32 i = 0; i &lt; g_decoderCount; ++i) {
+        const char* filePath =
+            (argc &lt; 2) ? testFiles[i] : argv[1 + i];
+
+        result = ma_decoder_init_file(
+            filePath,
+            &amp;decoderConfig,
+            &amp;g_pDecoders[i]
+        );
+        if (result != MA_SUCCESS) {
+            printf("Failed to load %s.\n", filePath);
+            // TODO: uninit previous decoders and free memory.
+            return -3;
+        }
+        g_pDecodersAtEnd[i] = MA_FALSE;
+    }
+
+    // Load SFX into memory buffer.
+    load_sfx();
+
+    // Playback device: same format as decoders.
+    deviceConfig = ma_device_config_init(ma_device_type_playback);
+    deviceConfig.playback.format   = SAMPLE_FORMAT;
+    deviceConfig.playback.channels = CHANNEL_COUNT;
+    deviceConfig.sampleRate        = SAMPLE_RATE;
+    deviceConfig.dataCallback      = data_callback;
+    deviceConfig.pUserData         = NULL;
+
+    if (ma_device_init(NULL, &amp;deviceConfig, &amp;device) != MA_SUCCESS) {
+        printf("Failed to open playback device.\n");
+        // TODO: uninit decoders and free memory.
+        return -3;
+    }</code></pre>
+        </article>
+
+        <!-- 8. Event-based shutdown & cleanup -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-blue">Main</span>
+            <h2>✅ Event-based shutdown &amp; cleanup</h2>
+          </div>
+          <p>The main thread waits on an event while an SFX thread runs in the background.</p>
+          <pre><code>    // Event signaled from the audio callback when all BGM is done.
+    ma_event_init(&amp;g_stopEvent);
+
+    if (ma_device_start(&amp;device) != MA_SUCCESS) {
+        printf("Failed to start playback device.\n");
+        ma_device_uninit(&amp;device);
+        // TODO: uninit decoders and free memory.
+        return -4;
+    }
+
+    // Start the SFX trigger thread.
+    std::thread sfxThread(sfx_trigger_thread);
+
+    printf("Waiting for playback to complete...\n");
+    ma_event_wait(&amp;g_stopEvent);  // wait until callback signals
+
+    // Stop the SFX thread.
+    playbackRunning.store(false);
+    sfxThread.join();
+
+    // Shutdown device and decoders.
+    ma_device_uninit(&amp;device);
+
+    for (ma_uint32 i = 0; i &lt; g_decoderCount; ++i) {
+        ma_decoder_uninit(&amp;g_pDecoders[i]);
+    }
+    free(g_pDecoders);
+    free(g_pDecodersAtEnd);
+
+    return 0;
+}</code></pre>
+        </article>
+
+      </section>
+    </div> <!-- /.cards-column -->
+  </main>
+
+  <footer class="site-footer">
+    <span>Built for quick MiniAudio recall 🔊</span>
+  </footer>
+
+  <script src="src/app.js"></script>
+</body>
+</html>

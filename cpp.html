@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8" />
+  <title>C++ Cheatsheet</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="background-gradient"></div>
+
+  <header class="site-header">
+    <div class="brand">
+      <span class="brand-dot"></span>
+      <span class="brand-text">Programmer's Cheatsheet</span>
+    </div>
+    <nav class="nav">
+      <a href="index.html">Etusivu</a>
+      <a href="python.html">Python</a>
+      <a href="cpp.html" class="active">C++</a>
+      <a href="sql.html">SQL</a>
+      <a href="sfml.html">SFML</a>
+      <a href="opengl.html">OpenGL</a>
+      <a href="miniaudio.html">MiniAudio</a>
+    </nav>
+  </header>
+
+  <main class="page page-with-sidebar">
+    <!-- LEFT SIDEBAR: tag filters -->
+    <aside class="tag-sidebar">
+      <h2 class="tag-sidebar-title">Filter by topic</h2>
+      <div class="tag-sidebar-list">
+        <!-- JS will inject filter pills here -->
+      </div>
+    </aside>
+
+    <!-- RIGHT COLUMN: intro + cards -->
+    <div class="cards-column">
+      <section class="intro">
+        <h1>C++ Cheatsheet</h1>
+        <p>Quick reference for core C++ types, control flow, pointers and STL containers.</p>
+      </section>
+
+      <section class="cards-grid">
+
+        <!-- Basic program skeleton -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-blue">Basics</span>
+            <h2>📦 Minimal C++ program</h2>
+          </div>
+          <p>Just enough to compile and print something.</p>
+          <pre><code>#include &lt;iostream&gt;
+
+int main() {
+    std::cout &lt;&lt; "Hello C++!\n";
+    return 0;            // optional in C++ main()
+}</code></pre>
+        </article>
+
+        <!-- Fundamental types -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-blue">Basics</span>
+            <h2>🔠 Fundamental value types</h2>
+          </div>
+          <p>Most common built-in scalar types and safe initialization.</p>
+          <pre><code>int    count   {42};        // integer
+double pi      {3.14159};  // floating point
+char   letter  {'A'};      // single character
+bool   done    {false};    // boolean
+
+unsigned int u {10u};      // never negative
+long long big {1'000'000}; // digit separators allowed
+
+// Prefer brace-init to avoid narrowing conversions</code></pre>
+        </article>
+
+        <!-- Logic & comparison operators -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-yellow">Logic</span>
+            <h2>⚖️ Comparison &amp; logical operators</h2>
+          </div>
+          <p>Combine conditions using <code>&amp;&amp;</code>, <code>||</code> and <code>!</code>.</p>
+          <pre><code>int x = 10;
+
+bool a = (x == 10);   // equal
+bool b = (x != 5);    // not equal
+bool c = (x &gt;= 0 &amp;&amp; x &lt;= 100); // AND
+bool d = (x &lt; 0 || x &gt; 100);  // OR
+bool e = !a;          // NOT
+
+if (a &amp;&amp; !d) {
+    std::cout &lt;&lt; "x is 10 and in range\n";
+}</code></pre>
+        </article>
+
+        <!-- Loop overview -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-green">Loops</span>
+            <h2>🔁 Loop types in C++</h2>
+          </div>
+          <p>Main loop constructs you will use all the time.</p>
+          <pre><code>while (condition) { ... }       // repeat while condition is true
+do { ... } while (condition);   // run at least once
+
+for (init; condition; step) {   // classic for
+    ...
+}
+
+for (auto x : container) {      // range-based for (C++11+)
+    ...
+}
+
+// break  - exit current loop
+// continue - skip to next iteration</code></pre>
+        </article>
+
+        <!-- while loop -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-green">Loops</span>
+            <h2>🔄 <code>while</code> loop</h2>
+          </div>
+          <p>Check condition first, then run the body.</p>
+          <pre><code>int i = 0;
+
+while (i &lt; 5) {
+    std::cout &lt;&lt; "i = " &lt;&lt; i &lt;&lt; "\n";
+    ++i;
+}
+
+// infinite loop (with break):
+while (true) {
+    char c;
+    std::cin &gt;&gt; c;
+    if (c == 'q') break;
+}</code></pre>
+        </article>
+
+        <!-- for loop -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-green">Loops</span>
+            <h2>📐 Classic <code>for</code> loop</h2>
+          </div>
+          <p>All loop control in one line: init, condition, increment.</p>
+          <pre><code>for (int i = 0; i &lt; 10; ++i) {
+    std::cout &lt;&lt; i &lt;&lt; " ";
+}
+
+// nested loops
+for (int y = 0; y &lt; height; ++y) {
+    for (int x = 0; x &lt; width; ++x) {
+        // process cell (x, y)
+    }
+}</code></pre>
+        </article>
+
+        <!-- range-based for -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-green">Loops</span>
+            <h2>📚 Range-based <code>for</code></h2>
+          </div>
+          <p>Best way to iterate containers and arrays (C++11+).</p>
+          <pre><code>#include &lt;vector&gt;
+
+std::vector&lt;int&gt; v {1, 2, 3, 4};
+
+// read-only
+for (int x : v) {
+    std::cout &lt;&lt; x &lt;&lt; " ";
+}
+
+// modify elements
+for (int&amp; x : v) {
+    x *= 2;
+}</code></pre>
+        </article>
+
+        <!-- do-while -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-green">Loops</span>
+            <h2>🔁 <code>do { } while</code></h2>
+          </div>
+          <p>Body runs at least once, condition checked at the end.</p>
+          <pre><code>int value;
+
+do {
+    std::cout &lt;&lt; "Give positive number: ";
+    std::cin &gt;&gt; value;
+} while (value &lt;= 0);
+
+std::cout &lt;&lt; "You gave " &lt;&lt; value &lt;&lt; "\n";</code></pre>
+        </article>
+
+        <!-- Free functions -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-cyan">Functions</span>
+            <h2>🧮 Functions &amp; parameters</h2>
+          </div>
+          <p>Declare above <code>main</code> or in a header, define once.</p>
+          <pre><code>int add(int a, int b) {
+    return a + b;
+}
+
+// default argument
+double power(double x, int exp = 2) {
+    double r = 1.0;
+    for (int i = 0; i &lt; exp; ++i) r *= x;
+    return r;
+}
+
+int main() {
+    std::cout &lt;&lt; add(2, 3) &lt;&lt; "\n";      // 5
+    std::cout &lt;&lt; power(3.0) &lt;&lt; "\n";     // 9
+}</code></pre>
+        </article>
+
+        <!-- Methods / classes -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-purple">OOP</span>
+            <h2>🏗 Classes &amp; methods</h2>
+          </div>
+          <p>Member functions operate on the data inside the object.</p>
+          <pre><code>struct Vector2 {
+    float x {0.f};
+    float y {0.f};
+
+    void move(float dx, float dy) {
+        x += dx;
+        y += dy;
+    }
+
+    float length() const; // declared here
+};
+
+float Vector2::length() const {
+    return std::sqrt(x*x + y*y);
+}</code></pre>
+        </article>
+
+        <!-- Raw pointers -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-red">Pointers</span>
+            <h2>📍 Raw pointers &amp; ownership</h2>
+          </div>
+          <p>Pointers store addresses. Be careful with lifetime and <code>delete</code>.</p>
+          <pre><code>int value = 10;
+int* p = &amp;value;   // pointer to value
+
+std::cout &lt;&lt; *p;  // dereference =&gt; 10
+
+// Dynamic allocation (avoid in modern C++, use smart pointers)
+int* heapInt = new int{42};
+std::cout &lt;&lt; *heapInt;
+delete heapInt;    // MUST match every 'new'</code></pre>
+        </article>
+
+        <!-- References -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-green">References</span>
+            <h2>🔗 References (&amp;)</h2>
+          </div>
+          <p>Reference is an alias, always bound to an existing object.</p>
+          <pre><code>int a = 5;
+int&amp; ref = a;        // ref is another name for a
+
+ref += 1;            // changes a as well
+std::cout &lt;&lt; a;      // 6
+
+// Passing by reference
+void increment(int&amp; x) {
+    x++;
+}</code></pre>
+        </article>
+
+        <!-- Smart pointers -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-cyan">SmartPtr</span>
+            <h2>🧠 Smart pointers</h2>
+          </div>
+          <p>Use RAII smart pointers instead of manual <code>new/delete</code>.</p>
+          <pre><code>#include &lt;memory&gt;
+
+struct Entity {
+    void greet() { std::cout &lt;&lt; "Hi\n"; }
+};
+
+int main() {
+    // unique ownership
+    std::unique_ptr&lt;Entity&gt; e = std::make_unique&lt;Entity&gt;();
+    e-&gt;greet();
+
+    // shared ownership
+    auto s1 = std::make_shared&lt;Entity&gt;();
+    auto s2 = s1;   // refcount +1
+}</code></pre>
+        </article>
+
+        <!-- std::vector -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-purple">Vector</span>
+            <h2>📚 std::vector — dynamic array</h2>
+          </div>
+          <p>Contiguous storage, fast random access, cheap push_back at end.</p>
+          <pre><code>#include &lt;vector&gt;
+
+std::vector&lt;int&gt; nums {1, 2, 3};
+
+nums.push_back(4);
+nums[0] = 10;              // unchecked access
+int last = nums.back();
+
+for (int x : nums) {       // range-for
+    std::cout &lt;&lt; x &lt;&lt; " ";
+}</code></pre>
+        </article>
+
+        <!-- std::list -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-purple">List</span>
+            <h2>🧵 std::list — linked list</h2>
+          </div>
+          <p>Fast insert/erase in the middle, but no random access.</p>
+          <pre><code>#include &lt;list&gt;
+
+std::list&lt;std::string&gt; names;
+names.push_back("Alice");
+names.push_front("Bob");
+
+for (auto&amp; n : names) {
+    std::cout &lt;&lt; n &lt;&lt; "\n";
+}
+
+// insert before iterator
+auto it = names.begin();
+++it;
+names.insert(it, "Carol");</code></pre>
+        </article>
+
+        <!-- std::map -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-green">Map</span>
+            <h2>🗺 std::map — key/value dictionary</h2>
+          </div>
+          <p>Ordered by key, lookup in O(log n). Keys are unique.</p>
+          <pre><code>#include &lt;map&gt;
+
+std::map&lt;std::string, int&gt; scores;
+
+scores["Alice"] = 10;
+scores["Bob"]   = 15;
+
+// find returns iterator or end()
+if (auto it = scores.find("Bob"); it != scores.end()) {
+    std::cout &lt;&lt; it-&gt;first  // key
+              &lt;&lt; ": "
+              &lt;&lt; it-&gt;second; // value
+}</code></pre>
+        </article>
+
+        <!-- std::queue -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-blue">Queue</span>
+            <h2>🚚 std::queue — FIFO</h2>
+          </div>
+          <p>First-in-first-out queue wrapper (default backend is <code>std::deque</code>).</p>
+          <pre><code>#include &lt;queue&gt;
+
+std::queue&lt;int&gt; q;
+q.push(1);
+q.push(2);
+q.push(3);
+
+while (!q.empty()) {
+    int front = q.front();
+    q.pop();
+    std::cout &lt;&lt; front &lt;&lt; " ";
+}</code></pre>
+        </article>
+
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <span>Built for quick C++ recall 💻</span>
+  </footer>
+
+  <script src="src/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8" />
+  <title>OpenGL Cheatsheet</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="background-gradient"></div>
+
+  <header class="site-header">
+    <div class="brand">
+      <span class="brand-dot"></span>
+      <span class="brand-text">Programmer's Cheatsheet</span>
+    </div>
+    <nav class="nav">
+      <a href="index.html">Etusivu</a>
+      <a href="python.html">Python</a>
+      <a href="cpp.html">C++</a>
+      <a href="sql.html">SQL</a>
+      <a href="sfml.html">SFML</a>
+      <a href="opengl.html" class="active">OpenGL</a>
+      <a href="miniaudio.html">MiniAudio</a>
+    </nav>
+  </header>
+
+  <main class="page page-with-sidebar">
+    <!-- LEFT SIDEBAR: tag filters -->
+    <aside class="tag-sidebar">
+      <h2 class="tag-sidebar-title">Filter by topic</h2>
+      <div class="tag-sidebar-list">
+        <!-- src/app.js will inject filter pills here based on card tags -->
+      </div>
+    </aside>
+
+    <!-- RIGHT COLUMN: intro + cards -->
+    <div class="cards-column">
+      <section class="intro">
+        <h1>OpenGL Cheatsheet</h1>
+        <p>Quick reference for the custom 2D engine: renderer, camera, input, shaders, geometry and textures.</p>
+      </section>
+
+      <section class="cards-grid">
+
+        <!-- 1. OpenGLRenderer: window + GL init -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-blue">Renderer</span>
+            <h2>🪟 Creating the OpenGL window &amp; context</h2>
+          </div>
+          <p>OpenGLRenderer constructor: create GLFW window, center it, load GL functions with glad and set callbacks.</p>
+          <pre><code>class OpenGLRenderer {
+public:
+    OpenGLRenderer(int width, int height, const std::string&amp; title)
+        : window(0) {
+
+        glfwWindowHint(GLFW_REFRESH_RATE, 60);
+
+        window.reset(
+            glfwCreateWindow(width, height, title.c_str(), NULL, NULL),
+            [](GLFWwindow* w) {
+                glfwDestroyWindow(w);
+                glfwTerminate();
+            }
+        );
+
+        if (!window) {
+            throw std::runtime_error("Failed to create GLFW window");
+        }
+
+        GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+        glfwSetWindowUserPointer(window.get(), this);
+
+        glfwSetWindowPos(
+            window.get(),
+            (mode-&gt;width  - width)  / 2,
+            (mode-&gt;height - height) / 2
+        );
+
+        glfwMakeContextCurrent(window.get());
+        gladLoadGL(glfwGetProcAddress);
+        glfwSwapInterval(1); // vsync
+}</code></pre>
+        </article>
+
+        <!-- 2. OpenGLRenderer: camera + UBO -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-blue">Renderer</span>
+            <h2>🎥 Camera, shaders &amp; UBO setup</h2>
+          </div>
+          <p>Create the main shader, camera and a uniform buffer for shared projection/view matrices.</p>
+          <pre><code>    // Inside OpenGLRenderer constructor (after GL context)
+    m_spriteBatch      = new SpriteBatch();
+    m_spriteBatchText  = new SpriteBatch();
+    m_spriteBatchText-&gt;enableBlendMode();
+
+    const char* vertexShaderSource = R"(
+        #version 330 core
+        layout (location = 0) in vec3 position;
+        layout (location = 1) in vec2 texCoordi;
+        layout (location = 2) in vec4 color;
+
+        layout (std140) uniform Matrices {
+            mat4 projection;
+            mat4 view;
+        };
+
+        out vec2 texCoord;
+        out vec4 tintColor;
+
+        void main() {
+            texCoord   = texCoordi;
+            tintColor  = color;
+            gl_Position = projection * view * vec4(position, 1.0);
+        }
+    )";
+
+    const char* fragmentShaderSource = R"(
+        #version 330 core
+        uniform vec4 color;
+        uniform sampler2D gSampler;
+
+        in vec2 texCoord;
+        in vec4 tintColor;
+        out vec4 FragColor;
+
+        void main() {
+            FragColor =
+                texture(gSampler, texCoord) * tintColor * color;
+        }
+    )";
+
+    shader   = new Shader(vertexShaderSource, fragmentShaderSource);
+    m_camera = new Camera(-width / 2.f, width / 2.f,
+                          -height / 2.f, height / 2.f);
+    m_camera-&gt;setPosition({width / 2.f, -height / 2.f, 10.f});
+
+    glViewport(0, 0, width, height);
+
+    // Uniform buffer for projection + view
+    GLuint uniformBlockIndexMain =
+        glGetUniformBlockIndex(shader-&gt;getID(), "Matrices");
+    glUniformBlockBinding(shader-&gt;getID(), uniformBlockIndexMain, 0);
+
+    glGenBuffers(1, &amp;uboMatrices);
+    glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+    glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4),
+                 NULL, GL_STATIC_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    glBindBufferRange(GL_UNIFORM_BUFFER, 0,
+                      uboMatrices, 0, 2 * sizeof(glm::mat4));</code></pre>
+        </article>
+
+        <!-- 3. Frame loop: begin/end frame & batching -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-green">Renderer</span>
+            <h2>🔁 Frame loop: begin/end frame &amp; batch</h2>
+          </div>
+          <p>Update camera matrices in the UBO, clear the screen, batch sprites and swap buffers.</p>
+          <pre><code>void OpenGLRenderer::onBeginFrame() {
+    tilesRendered = 0;
+    recalcCameraBounds(); // for tile culling
+
+    // Update shared projection &amp; view in UBO
+    shader-&gt;bind();
+    glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0,
+        sizeof(glm::mat4),
+        glm::value_ptr(m_camera-&gt;getProjectionMatrix()));
+    glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4),
+        sizeof(glm::mat4),
+        glm::value_ptr(m_camera-&gt;getViewMatrix()));
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    if (isWindowOpen()) {
+        glfwPollEvents();
+    }
+
+    glClearColor(r, g, b, a);     // set clear color
+    glClear(GL_COLOR_BUFFER_BIT); // clear color buffer
+
+    beginBatch();     // reset sprite &amp; text batches
+    debugLine-&gt;clear();
+}
+
+void OpenGLRenderer::onEndFrame() {
+    if (isWindowOpen()) {
+        flushBatch(); // draw sprites, debug lines &amp; text
+        glfwSwapBuffers(window.get());
+    }
+}</code></pre>
+        </article>
+
+        <!-- 4. Camera: ortho + view + bounds -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-purple">Camera</span>
+            <h2>🧭 Orthographic camera &amp; view matrix</h2>
+          </div>
+          <p>Simple 2D camera with orthographic projection, view matrix and tile-space bounds.</p>
+          <pre><code>struct CameraBounds {
+    float left, right, bottom, top;
+};
+
+class Camera : public GameObject {
+public:
+    Camera(float left, float right,
+           float bottom, float top,
+           float nearZ = -100.f,
+           float farZ  = 100.f)
+        : GameObject() {
+
+        m_projection = glm::ortho(left, right, bottom, top,
+                                  nearZ, farZ);
+        m_bounds = { left, right, bottom, top };
+    }
+
+    const glm::mat4&amp; getProjectionMatrix() const {
+        return m_projection;
+    }
+
+    void setProjectionMatrix(float left, float right,
+                             float bottom, float top,
+                             float nearZ = -100.f,
+                             float farZ  = 100.f) {
+        m_projection = glm::ortho(left, right, bottom, top,
+                                  nearZ, farZ);
+    }
+
+    glm::mat4 getViewMatrix() const {
+        // View matrix = inverse of model matrix
+        return glm::inverse(getModelMatrix());
+    }
+
+    const CameraBounds getCameraBounds() const {
+        return m_bounds;
+    }
+
+    void setCameraBounds(float left, float right,
+                         float bottom, float top) {
+        m_bounds.left   = left;
+        m_bounds.right  = right;
+        m_bounds.bottom = bottom;
+        m_bounds.top    = top;
+    }
+
+private:
+    glm::mat4    m_projection;
+    CameraBounds m_bounds;
+};</code></pre>
+        </article>
+
+        <!-- 5. Camera: view in tiles & culling -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-purple">Camera</span>
+            <h2>🧱 Tile-based view &amp; culling bounds</h2>
+          </div>
+          <p>Set camera in tile coordinates and compute visible tile area + buffer for culling.</p>
+          <pre><code>void OpenGLRenderer::setView(float camPosX, float camPosY,
+                             float width, float height) {
+    // Camera position in tile space -&gt; world (pixels)
+    m_camera-&gt;setPosition({
+        camPosX * m_tileSize,
+        -camPosY * m_tileSize,
+        0.0f
+    });
+
+    // Ortho projection scaled to tile size
+    m_camera-&gt;setProjectionMatrix(
+        (-width  / 2.0f) * m_tileSize,
+        ( width  / 2.0f) * m_tileSize,
+        (-height / 2.0f) * m_tileSize,
+        ( height / 2.0f) * m_tileSize
+    );
+
+    // Store view area in tiles for culling
+    m_viewWidthTiles  = width;
+    m_viewHeightTiles = height;
+}
+
+void OpenGLRenderer::recalcCameraBounds() {
+    glm::vec2 camPos = m_camera-&gt;getPosition();
+    camPos.y = -camPos.y;
+
+    glm::vec2 tileCamPos = camPos / m_tileSize;
+
+    glm::vec2 visibleTiles = { m_viewWidthTiles,
+                               m_viewHeightTiles };
+
+    float left   = tileCamPos.x - visibleTiles.x / 2.0f
+                   - m_cameraBoundsBuffer;
+    float right  = tileCamPos.x + visibleTiles.x / 2.0f
+                   + m_cameraBoundsBuffer;
+    float bottom = tileCamPos.y - visibleTiles.y / 2.0f
+                   - m_cameraBoundsBuffer;
+    float top    = tileCamPos.y + visibleTiles.y / 2.0f
+                   + m_cameraBoundsBuffer;
+
+    m_camera-&gt;setCameraBounds(left, right, bottom, top);
+}
+
+bool OpenGLRenderer::checkCameraBounds(glm::vec2 pos) {
+    const auto&amp; b = getCamera()-&gt;getCameraBounds();
+    return (pos.x &lt; b.left  || pos.x &gt; b.right ||
+            pos.y &lt; b.bottom || pos.y &gt; b.top);
+}</code></pre>
+        </article>
+
+        <!-- 6. Plane: 2D quad & model matrix -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-green">Geometry</span>
+            <h2>🟦 Plane: 2D quad with model matrix</h2>
+          </div>
+          <p>Plane represents a textured quad with position, rotation and scale; returns a model matrix.</p>
+          <pre><code>class Plane {
+public:
+    Plane(float pivotX = 0.0f, float pivotY = 0.0f,
+          float sizeX  = 1.0f, float sizeY  = 1.0f);
+
+    void setScale(glm::vec3 scale)   { m_scale = scale; }
+    void setRotation(float radians)  { m_angleZ = radians; }
+    void setPosition(const glm::vec3 pos) { m_position = pos; }
+
+    void setColor(float r, float g, float b, float a = 1.0f) {
+        color[0] = r; color[1] = g;
+        color[2] = b; color[3] = a;
+    }
+
+    glm::mat4 getModelMatrix() const {
+        glm::mat4 translation =
+            glm::inverse(glm::translate(
+                m_position * glm::vec3(-1.f, 1.f, 1.f)
+            ));
+        glm::mat4 rotationZ =
+            glm::rotate(m_angleZ, glm::vec3(0, 0, 1));
+        glm::mat4 scaling = glm::scale(m_scale);
+        return translation * rotationZ * scaling;
+    }
+
+private:
+    GLuint      m_positionsVbo;
+    GLuint      m_vao;
+    GLuint      m_texCoordsVbo;
+    float       color[4];
+
+    float       m_angleX, m_angleY, m_angleZ;
+    glm::vec3   m_position;
+    glm::vec3   m_scale;
+};</code></pre>
+        </article>
+
+        <!-- 7. Sprite/tile drawing & batching -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-green">Renderer</span>
+            <h2>🧱 Tiles, sprites &amp; atlas drawing</h2>
+          </div>
+          <p>Use Plane to build a model matrix, cull against camera bounds and push into SpriteBatch.</p>
+          <pre><code>void OpenGLRenderer::drawTile(
+    glm::vec2 position,
+    const glm::vec2&amp; tileSize,
+    const TexturePtr&amp; texture
+) {
+    if (checkCameraBounds(position))
+        return;
+
+    engine::Plane plane;
+    plane.setScale({ tileSize.x, tileSize.y, 1.f });
+
+    glm::vec2 finalPos = position * tileSize;
+    plane.setPosition({ finalPos.x, finalPos.y, 0.f });
+
+    glm::mat4 model = plane.getModelMatrix();
+    m_spriteBatch-&gt;addSprite(
+        texture-&gt;getTextureId(),
+        model,
+        0.0f, 1.0f, 0.0f, 1.0f,
+        glm::vec4(1.0f)
+    );
+    tilesRendered++;
+}
+
+void OpenGLRenderer::drawFromAtlas(
+    glm::vec2 position,
+    float rotation,
+    const glm::vec2&amp; scale,
+    const glm::vec2&amp; tileSize,
+    TexturePtr texture,
+    float uMin, float uMax, float vMin, float vMax
+) {
+    if (checkCameraBounds(position))
+        return;
+
+    Plane plane;
+    plane.setScale({
+        scale.x * tileSize.x,
+        scale.y * tileSize.y,
+        1.f
+    });
+    plane.setRotation(rotation);
+
+    glm::vec2 finalPos = position * tileSize;
+    plane.setPosition({ finalPos.x, finalPos.y, 0.f });
+
+    m_spriteBatch-&gt;addFromAtlas(
+        texture-&gt;getTextureId(),
+        plane.getModelMatrix(),
+        uMin, uMax, vMin, vMax
+    );
+}</code></pre>
+        </article>
+
+        <!-- 8. Shader helper: compile, link, uniforms -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-purple">Shader</span>
+            <h2>🧪 Shader helper: compile, link &amp; uniforms</h2>
+          </div>
+          <p>Utility class that compiles vertex/fragment sources and exposes <code>bind()</code> and multiple <code>setUniform</code> overloads.</p>
+          <pre><code>class Shader {
+public:
+    Shader(const char* vertSrc, const char* fragSrc)
+        : m_shaderProgram(0) {
+
+        // Vertex shader
+        GLuint vs = glCreateShader(GL_VERTEX_SHADER);
+        glShaderSource(vs, 1, &amp;vertSrc, NULL);
+        glCompileShader(vs);
+        // (check errors with glGetShaderiv / glGetShaderInfoLog...)
+
+        // Fragment shader
+        GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(fs, 1, &amp;fragSrc, NULL);
+        glCompileShader(fs);
+
+        // Link program
+        m_shaderProgram = glCreateProgram();
+        glAttachShader(m_shaderProgram, vs);
+        glAttachShader(m_shaderProgram, fs);
+        glLinkProgram(m_shaderProgram);
+        // (check linking errors...)
+
+        glDeleteShader(vs);
+        glDeleteShader(fs);
+    }
+
+    ~Shader() {
+        glDeleteProgram(m_shaderProgram);
+    }
+
+    void bind() {
+        glUseProgram(m_shaderProgram);
+    }
+
+    // mat4 uniform (MVP, projection, view, ...)
+    void setUniform(const std::string&amp; name,
+                    const glm::mat4&amp; m) {
+        GLint loc = glGetUniformLocation(m_shaderProgram,
+                                         name.c_str());
+        if (loc &lt; 0) return;
+        glUniformMatrix4fv(loc, 1, GL_FALSE, &amp;m[0][0]);
+    }
+
+    // vec4 uniform (color, etc.)
+    void setUniform(const std::string&amp; name,
+                    float x, float y, float z, float w) {
+        GLint loc = glGetUniformLocation(m_shaderProgram,
+                                         name.c_str());
+        if (loc &lt; 0) return;
+        glUniform4f(loc, x, y, z, w);
+    }
+
+    // sampler2D uniform
+    void setUniform(const std::string&amp; name, int value) {
+        GLint loc = glGetUniformLocation(m_shaderProgram,
+                                         name.c_str());
+        if (loc &lt; 0) return;
+        glUniform1i(loc, value);
+    }
+
+    GLint getID() const { return m_shaderProgram; }
+
+private:
+    GLint m_shaderProgram;
+};</code></pre>
+        </article>
+
+        <!-- 9. Texture: loading raw image data into OpenGL -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-cyan">Texture</span>
+            <h2>🧵 Texture wrapper: from pixels to GL texture</h2>
+          </div>
+          <p>Wrap an OpenGL 2D texture; setup parameters and choose format based on channel count.</p>
+          <pre><code>class Texture {
+public:
+    Texture(int width, int height,
+            int nrChannels,
+            const GLubyte* data)
+        : width(width), height(height) {
+
+        glGenTextures(1, &amp;m_texId);
+        glBindTexture(GL_TEXTURE_2D, m_texId);
+
+        glTexParameteri(GL_TEXTURE_2D,
+                        GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D,
+                        GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D,
+                        GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D,
+                        GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+        GLenum format = GL_RGBA;
+        if      (nrChannels == 1) format = GL_RED;
+        else if (nrChannels == 2) format = GL_RG;
+        else if (nrChannels == 3) format = GL_RGB;
+        else if (nrChannels == 4) format = GL_RGBA;
+
+        glTexImage2D(GL_TEXTURE_2D, 0,
+                     format, width, height, 0,
+                     format, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+
+    ~Texture() {
+        glDeleteTextures(1, &amp;m_texId);
+    }
+
+    GLuint getTextureId() const { return m_texId; }
+    int    getWidth()  const    { return width; }
+    int    getHeight() const    { return height; }
+
+private:
+    GLuint m_texId;
+    int    width, height;
+};</code></pre>
+        </article>
+
+        <!-- 10. InputSystem: keyboard, mouse, gamepad -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-red">Input</span>
+            <h2>🎮 InputSystem: keyboard, mouse &amp; gamepad</h2>
+          </div>
+          <p>Wrapper around GLFW input APIs: keys, mouse buttons, cursor and gamepad state.</p>
+          <pre><code>class InputSystem {
+public:
+    explicit InputSystem(GLFWwindow* win)
+        : window(win) {
+
+        glfwSetInputMode(window,
+                         GLFW_STICKY_MOUSE_BUTTONS,
+                         GLFW_TRUE);
+    }
+
+    bool isKeyPressed(int key) {
+        return glfwGetKey(window, key) == GLFW_PRESS;
+    }
+
+    bool isButtonPressed(int button) {
+        return glfwGetMouseButton(window, button)
+               == GLFW_PRESS;
+    }
+
+    bool isGamepadButtonPressed(int gamepad, int button) {
+        if (!glfwJoystickIsGamepad(gamepad))
+            return false;
+
+        GLFWgamepadstate state;
+        if (glfwGetGamepadState(gamepad, &amp;state)) {
+            return state.buttons[button] == GLFW_PRESS;
+        }
+        return false;
+    }
+
+    // Left stick = stick 0, right stick = stick 1.
+    glm::vec2 getGamepadJoystickPositions(int gamepad,
+                                          int stick,
+                                          int stickCount) {
+        if (!glfwJoystickPresent(gamepad))
+            return {0.f, 0.f};
+
+        int axesCount = stickCount * 2;
+        const float* axes = glfwGetJoystickAxes(gamepad,
+                                                &amp;axesCount);
+
+        float leftX = 0.f, leftY = 0.f;
+        float rightX = 0.f, rightY = 0.f;
+
+        if (axesCount >= 4) {
+            leftX  = axes[0]; leftY  = axes[1];
+            rightX = axes[2]; rightY = axes[3];
+        } else if (axesCount >= 2) {
+            leftX = axes[0]; leftY = axes[1];
+        }
+
+        if (stick == 0) return { leftX,  leftY  };
+        if (stick == 1) return { rightX, rightY };
+        return {0.f, 0.f};
+    }
+
+    // Cursor in screen coordinates (top-left of screen).
+    glm::ivec2 getCursorGlobalCoordinates() {
+        double relX = 0.0, relY = 0.0;
+        glfwGetCursorPos(window, &amp;relX, &amp;relY);
+
+        int winX = 0, winY = 0;
+        glfwGetWindowPos(window, &amp;winX, &amp;winY);
+
+        int absX = winX + (int)std::floor(relX);
+        int absY = winY + (int)std::floor(relY);
+        return { absX, absY };
+    }
+
+    // Cursor in window coordinates (0,0 = top-left of window).
+    glm::dvec2 getCursorCoordinates() {
+        double x = 0.0, y = 0.0;
+        glfwGetCursorPos(window, &amp;x, &amp;y);
+        return { x, y };
+    }
+
+private:
+    GLFWwindow* window;
+};</code></pre>
+        </article>
+
+      </section>
+    </div> <!-- /.cards-column -->
+  </main>
+
+  <footer class="site-footer">
+    <span>Built for quick OpenGL recall 🧊</span>
+  </footer>
+
+  <script src="src/app.js"></script>
+</body>
+</html>

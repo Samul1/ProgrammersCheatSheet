@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Python Cheatsheet</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="background-gradient"></div>
+
+  <header class="site-header">
+    <div class="brand">
+      <span class="brand-dot"></span>
+      <span class="brand-text">Programmer's Cheatsheet</span>
+    </div>
+    <nav class="nav">
+      <a href="index.html">Home</a>
+      <a href="python.html" class="active">Python</a>
+      <a href="cpp.html">C++</a>
+      <a href="sql.html">SQL</a>
+      <a href="sfml.html">SFML</a>
+      <a href="opengl.html">OpenGL</a>
+      <a href="miniaudio.html">MiniAudio</a>
+    </nav>
+  </header>
+
+  <main class="page page-with-sidebar">
+
+    <!-- LEFT SIDEBAR: tag filters -->
+    <aside class="tag-sidebar">
+      <h2 class="tag-sidebar-title">Filter by topic</h2>
+      <div class="tag-sidebar-list">
+        <!-- app.js will inject filter pills here -->
+      </div>
+    </aside>
+
+    <!-- RIGHT COLUMN: intro + cards -->
+    <div class="cards-column">
+      <section class="intro">
+        <h1>Python Cheatsheet</h1>
+      </section>
+
+      <section class="cards-grid">
+
+        <!-- Reading a file -->
+        <article class="card" id="files-read">
+          <div class="card-header">
+            <span class="pill pill-blue">Files</span>
+            <h2>📄 Reading a text file</h2>
+          </div>
+          <p>Basic pattern for iterating over file lines.</p>
+          <pre><code># Read file lines
+with open("file.txt") as f:
+    for line in f:
+        print(line.strip())
+
+# Tip:
+strip()  # removes newlines and surrounding whitespace.</code></pre>
+        </article>
+
+        <!-- Writing a file -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-blue">Files</span>
+            <h2>✍️ Writing to a file</h2>
+          </div>
+          <p>Create a new file or append to the end of an existing one.</p>
+          <pre><code># Create or overwrite a file
+with open("file.txt", "w") as f:
+    f.write("Hello world!\n")
+
+# Append to the end
+with open("file.txt", "a") as f:
+    f.write("New line at the end.\n")</code></pre>
+        </article>
+
+        <!-- CSV -->
+        <article class="card" id="csv">
+          <div class="card-header">
+            <span class="pill pill-green">CSV</span>
+            <h2>🧾 Working with CSV files</h2>
+          </div>
+          <p>Writing lists to CSV and splitting rows back into parts.</p>
+          <pre><code># Write a list of rows to CSV
+data = [["Name", "Age"], ["Arto", 30], ["Pekka", 25]]
+with open("data.csv", "w") as f:
+    for row in data:
+        f.write(";".join(map(str, row)) + "\n")
+
+# Read CSV and convert numeric fields
+with open("data.csv") as f:
+    for line in f:
+        parts = line.strip().split(";")
+        name = parts[0]
+        age = int(parts[1])</code></pre>
+        </article>
+
+        <!-- Lists and dicts -->
+        <article class="card" id="collections">
+          <div class="card-header">
+            <span class="pill pill-purple">Collections</span>
+            <h2>📚 Lists and dictionaries</h2>
+          </div>
+          <p>Core collection types and basic usage.</p>
+          <pre><code># List
+numbers = [1, 2, 3]
+numbers.append(4)
+total = sum(numbers)
+print(numbers[0])
+
+# Dictionary
+people = {"arto": 1977, "maija": 1953}
+people["pekka"] = 1985
+for name, year in people.items():
+    print(name, year)</code></pre>
+        </article>
+
+        <!-- Basic functions -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-cyan">Functions</span>
+            <h2>🧮 Basic functions and return values</h2>
+          </div>
+          <p>Function that returns a value and filtering with a function.</p>
+          <pre><code>def average(values):
+    return sum(values) / len(values)
+
+def born_before(people, year):
+    return [name for name, birth in people.items() if birth &lt; year]</code></pre>
+        </article>
+
+        <!-- Strings -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-yellow">Strings</span>
+            <h2>🔤 String handling</h2>
+          </div>
+          <p>Common methods: upper, lower, startswith, endswith, replace.</p>
+          <pre><code>word = "python"
+print(word.upper(), word.lower())
+print(word.startswith("py"))
+print(word.endswith("on"))
+print(word.replace("py", "ja"))</code></pre>
+        </article>
+
+        <!-- f-strings -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-yellow">Formatting</span>
+            <h2>📐 f-strings and alignment</h2>
+          </div>
+          <p>Printing in columns with left/right alignment.</p>
+          <pre><code>name = "Arto"
+age = 45
+print(f"{name:10}{age:>5}")   # left and right aligned
+print(f"{'name':30}{'age':>10}")
+print(f"{name:30}{age:>10}")</code></pre>
+        </article>
+
+        <!-- Exceptions -->
+        <article class="card" id="errors">
+          <div class="card-header">
+            <span class="pill pill-red">Errors</span>
+            <h2>⚠️ Handling exceptions</h2>
+          </div>
+          <p>Basic try/except and repeatedly asking for valid input.</p>
+          <pre><code>try:
+    value = int(input("Enter an integer: "))
+except ValueError:
+    print("Invalid input!")
+
+# Combined with repeated asking:
+while True:
+    try:
+        x = int(input("Enter a number: "))
+        break
+    except ValueError:
+        print("Try again.")</code></pre>
+        </article>
+
+        <!-- raise -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-red">Errors</span>
+            <h2>🚫 Raising custom errors</h2>
+          </div>
+          <p>Raise your own exception on invalid values.</p>
+          <pre><code>def new_person(name, age):
+    if not name or len(name.split()) &lt; 2:
+        raise ValueError("Invalid name")
+    if age &lt; 0 or age &gt; 150:
+        raise ValueError("Invalid age")
+    return (name, age)</code></pre>
+        </article>
+
+        <!-- Flow / loops -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-green">Flow</span>
+            <h2>🔍 Conditions and loops</h2>
+          </div>
+          <p>Basic for/while structures.</p>
+          <pre><code>for i in range(5):
+    print(i)
+
+while True:
+    command = input("&gt; ")
+    if command == "quit":
+        break</code></pre>
+        </article>
+
+        <!-- List comprehension -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-green">Flow</span>
+            <h2>🧩 Conditions and list comprehensions</h2>
+          </div>
+          <p>Filter a list in a single expression.</p>
+          <pre><code>numbers = [1, 2, 3, 4, 5]
+evens = [x for x in numbers if x % 2 == 0]</code></pre>
+        </article>
+
+        <!-- Word search -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-purple">Search</span>
+            <h2>🔠 Word search with simple patterns</h2>
+          </div>
+          <p>Dot = any character, <code>*</code> at start/end = wildcard.</p>
+          <pre><code># dot = any character
+# * at start or end = wildcard
+def search_words(pattern):
+    results = []
+    with open("words.txt") as f:
+        for word in f:
+            word = word.strip()
+            if pattern.startswith("*") and word.endswith(pattern[1:]):
+                results.append(word)
+            elif pattern.endswith("*") and word.startswith(pattern[:-1]):
+                results.append(word)
+            elif "." in pattern:
+                if len(word) == len(pattern) and all(
+                    a == b or b == "." for a, b in zip(word, pattern)
+                ):
+                    results.append(word)
+            elif word == pattern:
+                results.append(word)
+    return results</code></pre>
+        </article>
+
+        <!-- Recipes -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-purple">Recipes</span>
+            <h2>📘 Recipe parsing example</h2>
+          </div>
+          <p>Recipes separated by empty lines, search by name.</p>
+          <pre><code>def find_by_name(filename, word):
+    result = []
+    with open(filename) as f:
+        recipe = []
+        for line in f:
+            if line.strip() == "":
+                recipe = []
+                continue
+            recipe.append(line.strip())
+            if word.lower() in recipe[0].lower():
+                result.append(recipe[0])
+    return result</code></pre>
+        </article>
+
+        <!-- Distance -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-cyan">Math</span>
+            <h2>📏 Distance calculation</h2>
+          </div>
+          <p>Compute distance between two points from coordinate changes.</p>
+          <pre><code>import math
+
+def distance(a, b):
+    x_km = (a[0] - b[0]) * 55.26
+    y_km = (a[1] - b[1]) * 111.2
+    return math.sqrt(x_km**2 + y_km**2)</code></pre>
+        </article>
+
+        <!-- Useful basics -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-yellow">Basics</span>
+            <h2>🧰 Useful basic operations</h2>
+          </div>
+          <p>Small reminder of very common operations.</p>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Operation</th>
+                  <th>Code</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Convert string to int</td>
+                  <td><code>int("42")</code></td>
+                </tr>
+                <tr>
+                  <td>Convert number to string</td>
+                  <td><code>str(42)</code></td>
+                </tr>
+                <tr>
+                  <td>Get list length</td>
+                  <td><code>len(my_list)</code></td>
+                </tr>
+                <tr>
+                  <td>Sort a list</td>
+                  <td><code>my_list.sort()</code> or <code>sorted(my_list)</code></td>
+                </tr>
+                <tr>
+                  <td>Remove duplicates</td>
+                  <td><code>set(my_list)</code></td>
+                </tr>
+                <tr>
+                  <td>Check key in dict</td>
+                  <td><code>'key' in my_dict</code></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <!-- File handling summary -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-blue">Files</span>
+            <h2>🧾 Summary – basic file handling pattern</h2>
+          </div>
+          <p>Simple try/except for <code>FileNotFoundError</code>.</p>
+          <pre><code>try:
+    with open("data.txt") as f:
+        for line in f:
+            print(line.strip())
+except FileNotFoundError:
+    print("File not found.")</code></pre>
+        </article>
+
+        <!-- Common error types -->
+        <article class="card">
+          <div class="card-header">
+            <span class="pill pill-red">Errors</span>
+            <h2>💡 Common error types</h2>
+          </div>
+          <p>Exceptions you will frequently see while doing exercises.</p>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Exception</th>
+                  <th>Explanation</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>ValueError</code></td>
+                  <td>value has wrong format (e.g. <code>int("abc")</code>)</td>
+                </tr>
+                <tr>
+                  <td><code>TypeError</code></td>
+                  <td>wrong type (e.g. <code>len(42)</code>)</td>
+                </tr>
+                <tr>
+                  <td><code>IndexError</code></td>
+                  <td>index outside valid range</td>
+                </tr>
+                <tr>
+                  <td><code>ZeroDivisionError</code></td>
+                  <td>division by zero</td>
+                </tr>
+                <tr>
+                  <td><code>FileNotFoundError</code></td>
+                  <td>file does not exist</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+      </section>
+    </div> <!-- /.cards-column -->
+  </main>
+
+  <footer class="site-footer">
+    <span>Built for quick Python recall 🐍</span>
+  </footer>
+
+  <script src="src/app.js"></script>
+</body>
+</html>

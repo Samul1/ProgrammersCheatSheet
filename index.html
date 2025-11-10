@@ -1,151 +1,98 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fi">
 <head>
   <meta charset="UTF-8" />
-  <title>Python Cheatsheet</title>
+  <title>Programmer's Cheatsheet</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="style.css" />
-  <!-- Google-fontti pientä viimeistelyä varten -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet" />
 </head>
 <body>
   <div class="background-gradient"></div>
 
   <header class="site-header">
-    <div class="brand">
-      <span class="brand-dot"></span>
-      <span class="brand-text">Python Cheatsheet</span>
-    </div>
-    <nav class="nav">
-      <a href="#files">Files</a>
-      <a href="#csv">CSV</a>
-      <a href="#dicts">Dicts</a>
-      <a href="#errors">Errors</a>
-    </nav>
-  </header>
+  <div class="brand">
+    <span class="brand-dot"></span>
+    <span class="brand-text">Programmer's Cheatsheet</span>
+  </div>
+  <nav class="nav">
+    <a href="index.html" class="active">Etusivu</a>
+    <a href="python.html">Python</a>
+    <a href="cpp.html">C++</a>
+    <a href="sql.html">SQL</a>
+    <a href="sfml.html">SFML</a>
+    <a href="opengl.html">OpenGL</a>
+    <a href="miniaudio.html">MiniAudio</a>
+  </nav>
+</header>
 
   <main class="page">
-    <section class="intro">
-      <h1>Python Cheatsheet</h1>
-      <p>Usein käytetyt komennot ja esimerkit – kurssitehtävistä tuttuja juttuja yhdessä paikassa.</p>
+    <section class="intro" style="text-align:center;">
+      <h1>Programmer's Cheatsheet</h1>
+      <p>Valitse kieli tai kirjasto, josta haluat pikaohjeen.</p>
     </section>
 
-    <section class="cards-grid">
+    <section class="cards-grid" style="max-width:1000px;margin:0 auto;">
 
-      <!-- FILES -->
-      <article class="card" id="files">
+      <!-- Python -->
+      <article class="card hover-link" onclick="location.href='python.html'">
         <div class="card-header">
-          <span class="pill pill-blue">Files</span>
-          <h2>Tiedostojen luku & kirjoitus</h2>
+          <span class="pill pill-blue">Language</span>
+          <h2>🐍 Python</h2>
         </div>
-        <p>Perusmallit tiedostojen käsittelyyn: luku, kirjoitus ja lisäys.</p>
-        <pre><code># Luku
-with open("data.txt") as f:
-    for rivi in f:
-        print(rivi.strip())
-
-# Kirjoitus (ylikirjoittaa)
-with open("out.txt", "w") as f:
-    f.write("Moi!\n")
-
-# Lisäys loppuun
-with open("out.txt", "a") as f:
-    f.write("Uusi rivi\n")</code></pre>
+        <p>Peruskirjastot, tiedostot, virheet ja datarakenteet.</p>
       </article>
 
-      <!-- CSV -->
-      <article class="card" id="csv">
+      <!-- C++ -->
+      <article class="card hover-link" onclick="location.href='cpp.html'">
         <div class="card-header">
-          <span class="pill pill-green">CSV</span>
-          <h2>CSV-tiedostot</h2>
+          <span class="pill pill-cyan">Language</span>
+          <h2>💻 C++</h2>
         </div>
-        <p>Rivien pilkkominen ja peruslukeminen puolipisteellä erotetusta CSV:stä.</p>
-        <pre><code># Lue CSV
-with open("opiskelijat.csv") as f:
-    for rivi in f:
-        rivi = rivi.strip()
-        osat = rivi.split(";")
-        nimi = osat[0]
-        pisteet = [int(x) for x in osat[1:]]
-        print(nimi, sum(pisteet))</code></pre>
+        <p>Muistinhallinta, funktiot, vektorit ja RAII.</p>
       </article>
 
-      <!-- DICTS -->
-      <article class="card" id="dicts">
+      <!-- SQL -->
+      <article class="card hover-link" onclick="location.href='sql.html'">
         <div class="card-header">
-          <span class="pill pill-purple">Dict</span>
-          <h2>Sanakirjat & ryhmittely</h2>
+          <span class="pill pill-green">Language</span>
+          <h2>🧮 SQL</h2>
         </div>
-        <p>Avaimet, arvot ja toistuvat asiat yhteen paikkaan.</p>
-        <pre><code># Sanakirja
-tulokset = {"Maija": 5, "Liisa": 3}
-tulokset["Kalle"] = 4
-
-for nimi, pist in tulokset.items():
-    print(nimi, pist)
-
-# Ryhmittely
-sanat = ["banaani", "bussi", "omena", "auto"]
-ryhmat = {}
-for sana in sanat:
-    alkukirjain = sana[0]
-    ryhmat.setdefault(alkukirjain, []).append(sana)</code></pre>
+        <p>SELECT, JOIN, GROUP BY, HAVING ja ORDER BY.</p>
       </article>
 
-      <!-- F-STRINGS -->
-      <article class="card">
+      <!-- SFML -->
+      <article class="card hover-link" onclick="location.href='sfml.html'">
         <div class="card-header">
-          <span class="pill pill-yellow">Formatting</span>
-          <h2>f-merkkijonot & sarakkeet</h2>
+          <span class="pill pill-purple">Library</span>
+          <h2>🎮 SFML</h2>
         </div>
-        <p>Siisti taulukkotulostus – esim. kurssitulosten listaus.</p>
-        <pre><code>nimi = "pekka peloton"
-teht_lkm = 21
-arvosana = 3
-
-print(f"{'nimi':30}{'teht_lkm':>10}{'arvosana':>10}")
-print(f"{nimi:30}{teht_lkm:10}{arvosana:10}")</code></pre>
+        <p>Grafiikka, äänet ja tapahtumankäsittely C++:ssa.</p>
       </article>
 
-      <!-- ERRORS -->
-      <article class="card" id="errors">
+      <!-- OpenGL -->
+      <article class="card hover-link" onclick="location.href='opengl.html'">
         <div class="card-header">
-          <span class="pill pill-red">Errors</span>
-          <h2>Poikkeukset & virheenkäsittely</h2>
+          <span class="pill pill-yellow">Graphics</span>
+          <h2>🌐 OpenGL</h2>
         </div>
-        <p>Syötteen validointi ja siisti virheiden käsittely.</p>
-        <pre><code>def lue_kokonaisluku(viesti, ala, yla):
-    while True:
-        try:
-            luku = int(input(viesti))
-            if ala &lt;= luku &lt;= yla:
-                return luku
-        except ValueError:
-            pass
-        print(f"Syötteen on oltava kokonaisluku väliltä {ala}...{yla}")</code></pre>
+        <p>Shaderit, tekstuurit ja renderöinti 3D-grafiikassa.</p>
       </article>
 
-      <!-- CUSTOM -->
-      <article class="card">
+      <!-- MiniAudio -->
+      <article class="card hover-link" onclick="location.href='miniaudio.html'">
         <div class="card-header">
-          <span class="pill pill-cyan">Utils</span>
-          <h2>Hyötyfunktioita</h2>
+          <span class="pill pill-red">Audio</span>
+          <h2>🎧 MiniAudio</h2>
         </div>
-        <p>Esim. arvosanan lasku pisteiden mukaan.</p>
-        <pre><code>def laske_arvosana(pisteet):
-    if pisteet &lt;= 14: return 0
-    elif pisteet &lt;= 17: return 1
-    elif pisteet &lt;= 20: return 2
-    elif pisteet &lt;= 23: return 3
-    elif pisteet &lt;= 27: return 4
-    else: return 5</code></pre>
+        <p>Kevyt kirjasto äänten toistoon ja tallennukseen.</p>
       </article>
 
     </section>
   </main>
 
-  <footer class="site-footer">
-    <span>Built for quick Python recall 🐍</span>
+  <footer class="site-footer" style="text-align:center;">
+    <span>© 2025 Programmer's Cheatsheet — Samul1</span>
   </footer>
 </body>
 </html>

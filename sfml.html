@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8" />
+  <title>SFML Cheatsheet</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="background-gradient"></div>
+
+  <header class="site-header">
+  <div class="brand">
+    <span class="brand-dot"></span>
+    <span class="brand-text">Programmer's Cheatsheet</span>
+  </div>
+  <nav class="nav">
+    <a href="index.html">Etusivu</a>
+    <a href="python.html">Python</a>
+    <a href="cpp.html">C++</a>
+    <a href="sql.html">SQL</a>
+    <a href="sfml.html" class="active">SFML</a>
+    <a href="opengl.html">OpenGL</a>
+    <a href="miniaudio.html">MiniAudio</a>
+  </nav>
+</header>
+
+  <main class="page">
+    <section class="intro">
+      <h1>SFML Cheatsheet</h1>
+      <p>Pikamuistio grafiikan, äänen ja tapahtumien käyttöön SFML:ssä.</p>
+    </section>
+
+    <section class="cards-grid">
+
+      <article class="card">
+        <div class="card-header">
+          <span class="pill pill-purple">Window</span>
+          <h2>🪟 Ikkunan luonti ja tapahtumat</h2>
+        </div>
+        <pre><code>#include &lt;SFML/Graphics.hpp&gt;
+
+int main() {
+    sf::RenderWindow window(sf::VideoMode(800, 600), "SFML Window");
+
+    while (window.isOpen()) {
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed)
+                window.close();
+        }
+
+        window.clear(sf::Color::Black);
+        // Piirrä tänne
+        window.display();
+    }
+}</code></pre>
+      </article>
+
+      <article class="card">
+        <div class="card-header">
+          <span class="pill pill-green">Graphics</span>
+          <h2>🎨 Muodon piirtäminen</h2>
+        </div>
+        <pre><code>sf::CircleShape circle(50);
+circle.setFillColor(sf::Color::Cyan);
+circle.setPosition(100, 100);
+
+window.draw(circle);</code></pre>
+      </article>
+
+      <article class="card">
+        <div class="card-header">
+          <span class="pill pill-yellow">Audio</span>
+          <h2>🔊 Äänen toisto</h2>
+        </div>
+        <pre><code>#include &lt;SFML/Audio.hpp&gt;
+
+sf::SoundBuffer buffer;
+if (buffer.loadFromFile("sound.wav")) {
+    sf::Sound sound;
+    sound.setBuffer(buffer);
+    sound.play();
+}</code></pre>
+      </article>
+
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <span>Built for quick SFML recall 🎮</span>
+  </footer>
+</body>
+</html>
